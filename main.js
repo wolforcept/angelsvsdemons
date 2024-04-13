@@ -295,7 +295,7 @@ function randomLetter() {
 
 // EVENTS
 
-function mousePressed(e) {
+function mousePressed() {
     objs.forEach(o => {
         if (!o.selectable || selected) return;
         if (mouseX > o.x && mouseY > o.y && mouseX < o.x + o.w && mouseY < o.y + o.h) {
@@ -316,4 +316,19 @@ function mouseReleased() {
         if (selected.onRelease) selected.onRelease();
         selected = undefined;
     }
+}
+
+function touchStarted() {
+    mousePressed();
+    return false;
+}
+
+function touchMoved() {
+    mouseDragged();
+    return false;
+}
+
+function touchEnded() {
+    mouseEnded();
+    return false;
 }
