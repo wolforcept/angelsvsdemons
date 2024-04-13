@@ -329,6 +329,6 @@ function touchMoved() {
 }
 
 function touchEnded() {
-    mouseEnded();
+    mouseReleased();
     return false;
 }
