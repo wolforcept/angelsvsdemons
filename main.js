@@ -308,6 +308,7 @@ function mouseDragged() {
     if (selected) {
         selected.x = mouseX - selected.w / 2;
         selected.y = mouseY - selected.h / 2;
+        selected.y = Math.min(400, selected.y);
     }
 }
 
@@ -320,15 +321,14 @@ function mouseReleased() {
 
 function touchStarted() {
     mousePressed();
-    return false;
 }
 
 function touchMoved() {
     mouseDragged();
-    return false;
+    if (touches.length == 1)
+        return false;
 }
 
 function touchEnded() {
     mouseReleased();
-    return false;
 }
