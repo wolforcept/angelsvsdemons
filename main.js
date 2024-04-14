@@ -1,10 +1,15 @@
 var font;
+let imgFullscreen;
 let imgRing, imgSquare, imgAngel, imgDemon;
 let imgRuneA, imgRuneB, imgRuneC, imgRuneD, imgRuneE, imgRuneF, imgRuneG, imgRuneH;
 const objs = [];
 var square1, square2, square3, square4, square5;
 const letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
 var selected;
+let isFullscreen = false;
+let nextLetters = shuffle([...letters]);
+let imgLetterA, imgLetterB, imgLetterC, imgLetterD, imgLetterE, imgLetterF, imgLetterG, imgLetterH;
+let score = 0;
 
 const formulas = [
     createFormula(2),
@@ -13,7 +18,7 @@ const formulas = [
     createFormula(3),
     createFormula(3),
     createFormula(3),
-    createFormula(3),
+    createFormula(4),
     createFormula(4),
     createFormula(4),
     createFormula(5),
@@ -28,10 +33,12 @@ function setup() {
     font = loadFont('assets/cloude.ttf');
 
     createCanvas(1324, 762);
+    imgFullscreen = loadImage('assets/fullscreen.png');
     imgRing = loadImage('assets/ring.png');
     imgSquare = loadImage('assets/square.png');
     imgAngel = loadImage('assets/angel.png');
     imgDemon = loadImage('assets/demon.png');
+
     imgRuneA = loadImage('assets/runeA.png');
     imgRuneB = loadImage('assets/runeB.png');
     imgRuneC = loadImage('assets/runeC.png');
@@ -41,9 +48,18 @@ function setup() {
     imgRuneG = loadImage('assets/runeG.png');
     imgRuneH = loadImage('assets/runeH.png');
 
+    imgLetterA = loadImage('assets/letterA.png');
+    imgLetterB = loadImage('assets/letterB.png');
+    imgLetterC = loadImage('assets/letterC.png');
+    imgLetterD = loadImage('assets/letterD.png');
+    imgLetterE = loadImage('assets/letterE.png');
+    imgLetterF = loadImage('assets/letterF.png');
+    imgLetterG = loadImage('assets/letterG.png');
+    imgLetterH = loadImage('assets/letterH.png');
+
     drawingContext.imageSmoothingEnabled = false;
 
-    objs.push(createDemon());
+    objs.push(createDemon(3));
 
     square1 = createSquare(56, 0);
     square2 = createSquare(312, 0);
@@ -57,7 +73,7 @@ function setup() {
     objs.push(square5);
 
     for (let i = 0; i < 14; i++)
-        objs.unshift(createRune(500 + Math.random() * 700, Math.random() * 350, randomLetter()));
+        objs.unshift(createRune(500 + Math.random() * 700, Math.random() * 350, randomLetter(0)));
 
 }
 
@@ -66,8 +82,20 @@ function draw() {
     textFont(font);
     fill(color(22, 22, 23, 255));
     rect(0, 0, width, height);
-    fill(color(11, 11, 12, 255));
-    rect(0, 440, width, height);
+
+    fill(color(122, 22, 23, 255));
+    const text2 = "SCORE: " + score;
+    if (formulas.length === 0) {
+        textSize(500);
+        const text1 = "YOU LOSE";
+        text(text1, width / 2 - textWidth(text1) / 2, height / 3);
+        textSize(300);
+        text(text2, width / 2 - textWidth(text2) / 2, height / 2);
+        return;
+    }
+
+    textSize(100);
+    text(text2, width - textWidth(text2) - 20, 50);
 
     image(imgRing, 0, 0, 440, 440);
 
@@ -89,30 +117,33 @@ function draw() {
         o.render(i);
     }
 
+    image(imgFullscreen, width - 32, height - 32, 32, 32);
 }
 
 let angelTimer = 50;
-let timePassed = 0;
-// let formulaTimer = 50;
+let angelsSpawned = 0;
 function gameStep() {
     angelTimer--;
     if (angelTimer <= 0) {
-        timePassed++;
-        angelTimer = 1000 + Math.random() * 500 - timePassed * 10;
-        objs.push(createAngel());
+        angelsSpawned++;
+        angelTimer = 800 + Math.random() * 500 - Math.min(1200, angelsSpawned * 10);
+        if (angelsSpawned < 5)
+            objs.push(createAngel(1));
+        else if (angelsSpawned < 10)
+            objs.push(createAngel(1 + Math.floor(Math.random() * 2)));
+        else if (angelsSpawned < 25)
+            objs.push(createAngel(1 + Math.floor(Math.random() * 3)));
+        else if (angelsSpawned < 50)
+            objs.push(createAngel(1 + Math.floor(Math.random() * 4)));
+        else
+            objs.push(createAngel(2 + Math.floor(Math.random() * 6)));
     }
-    // formulaTimer--;
-    // if (formulaTimer <= 0) {
-    //     formulaTimer = 200 + Math.random() * 200;
-    //     formulas.push(createFormula());
-    // }
 }
 
-function createDemon() {
+function createDemon(hp) {
     const obj = {};
     obj.type = "demon";
-    // obj.hp = hp ? hp : 2 + Math.floor(Math.random() * 3);
-    obj.hp = 4;
+    obj.hp = hp;
     obj.x = 156;
     obj.y = 100;
     obj.w = 128;
@@ -143,8 +174,10 @@ function createDemon() {
                 o.hp -= dmg;
                 if (obj.hp <= 0)
                     obj.remove = true;
-                if (o.hp <= 0)
+                if (o.hp <= 0) {
+                    score += o.maxHp;
                     o.remove = true;
+                }
             }
             return;
         }
@@ -154,15 +187,16 @@ function createDemon() {
         image(imgDemon, obj.x, obj.y, obj.w, obj.h);
         fill(color(255, 55, 55));
         textSize(100);
-        text(obj.hp + "/" + 4, obj.x + 30, obj.y);
+        text(obj.hp + "/" + hp, obj.x + 30, obj.y);
     }
     return obj;
 }
 
-function createAngel() {
+function createAngel(hp) {
     const obj = {};
     obj.type = "angel";
-    obj.hp = 1 + Math.floor(Math.random() * 4);
+    obj.hp = hp;
+    obj.maxHp = hp;
     obj.x = width;
     obj.w = 128;
     obj.h = 128;
@@ -178,7 +212,7 @@ function createAngel() {
         image(imgAngel, obj.x, obj.y, obj.w, obj.h);
         fill(color(155, 155, 255));
         textSize(100);
-        text(obj.hp + "/" + 4, obj.x + 30, obj.y);
+        text(obj.hp + "/" + hp, obj.x + 30, obj.y);
     }
     return obj;
 }
@@ -189,8 +223,8 @@ function createSquare(x, y) {
     obj.type = "square";
     obj.x = x;
     obj.y = y;
-    obj.w = 64;
-    obj.h = 64;
+    obj.w = 72;
+    obj.h = 72;
     obj.onDrop = (o) => {
         obj.rune = { ...o };
         o.remove = true;
@@ -218,7 +252,7 @@ function createSquare(x, y) {
 function createRune(x, y) {
     const obj = {};
     obj.type = "rune";
-    obj.letter = randomLetter();
+    obj.letter = randomLetter(0.1);
     obj.x = x;
     obj.y = y;
     obj.w = 64;
@@ -241,12 +275,12 @@ function createRune(x, y) {
             }
         };
     };
-    obj.render = () => image(getLetterImage(obj.letter), obj.x, obj.y, obj.w, obj.h);
+    obj.render = () => image(getRuneImage(obj.letter), obj.x, obj.y, obj.w, obj.h);
     return obj;
 }
 
 function getFormula(..._runes) {
-    for (let i = 0; i < formulas.length; i++) {
+    for (let i = formulas.length - 1; i >= 0; i--) {
         const formula = formulas[i];
         const reqs = [...formula.reqs];
         let fail = false;
@@ -266,19 +300,23 @@ function getFormula(..._runes) {
 function createFormula(n) {
     const reqs = [];
     for (let i = 0; i < n; i++)
-        reqs.push(randomLetter());
+        reqs.push(randomLetter(0.05));
     return {
         reqs,
-        runFormula: () => objs.unshift(createDemon()),
+        runFormula: () => objs.unshift(createDemon(reqs.length)),
         render: (i) => {
+            fill(color(200, 0, 0, 255));
+            rect(9 + i * 103, 440, 66, height)
+            fill(color(0, 0, 0, 255));
+            rect(10 + i * 103, 441, 64, height)
             reqs.forEach((r, j) => {
-                image(getLetterImage(r), i * 100, 440 + j * 64, 64, 64);
+                image(getLetterImage(r), 10 + i * 103, 441 + j * 64, 64, 64);
             })
         }
     }
 }
 
-function getLetterImage(letter) {
+function getRuneImage(letter) {
     if (letter === "A") return imgRuneA;
     if (letter === "B") return imgRuneB;
     if (letter === "C") return imgRuneC;
@@ -289,8 +327,23 @@ function getLetterImage(letter) {
     if (letter === "H") return imgRuneH;
 }
 
-function randomLetter() {
-    return letters[Math.floor(Math.random() * letters.length)];
+function getLetterImage(letter) {
+    if (letter === "A") return imgLetterA;
+    if (letter === "B") return imgLetterB;
+    if (letter === "C") return imgLetterC;
+    if (letter === "D") return imgLetterD;
+    if (letter === "E") return imgLetterE;
+    if (letter === "F") return imgLetterF;
+    if (letter === "G") return imgLetterG;
+    if (letter === "H") return imgLetterH;
+}
+
+function randomLetter(doRandom) {
+    if (Math.random() < doRandom)
+        return letters[Math.floor(Math.random() * letters.length)];
+    if (nextLetters.length === 0)
+        nextLetters = shuffle([...letters]);
+    return nextLetters.splice(0, 1)[0];
 }
 
 // EVENTS
@@ -317,6 +370,10 @@ function mouseReleased() {
         if (selected.onRelease) selected.onRelease();
         selected = undefined;
     }
+
+    if (mouseX > width - 32 && mouseY > height - 32) {
+        onFullscreen();
+    }
 }
 
 function touchStarted() {
@@ -331,4 +388,23 @@ function touchMoved() {
 
 function touchEnded() {
     mouseReleased();
+}
+
+function onFullscreen() {
+    isFullscreen = !isFullscreen;
+    fullscreen(isFullscreen);
+    $("canvas").css("width", isFullscreen ? "100vw" : "");
+    $("canvas").css("height", isFullscreen ? "100vh" : "");
+}
+
+// UTILS
+
+function shuffle(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
 }
